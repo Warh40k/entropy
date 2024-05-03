@@ -92,15 +92,15 @@ func GetCondProbsXX(seq []byte, condFreqs map[byte]map[byte]float64) map[byte]ma
 	return condProbsXX
 }
 
-func GetCondEntropyXX(probs [256]float64, condProbsXX map[byte]map[byte]map[byte]float64) float64 {
+func GetCondEntropyXX(probs [256]float64, condProbs map[byte]map[byte]float64, condProbsXX map[byte]map[byte]map[byte]float64) float64 {
 	var entropy float64
 	for prev2 := range condProbsXX {
 		for prev := range condProbsXX[prev2] {
 			var temp float64
-			for _, condProb := range condProbsXX[prev2][prev] {
-				temp += condProb * math.Log2(condProb)
+			for _, condProbXX := range condProbsXX[prev2][prev] {
+				temp += condProbXX * math.Log2(condProbXX)
 			}
-			entropy += probs[prev2] * probs[prev] * temp
+			entropy += condProbs[prev2][prev] * probs[prev2] * temp
 		}
 	}
 	return -entropy
