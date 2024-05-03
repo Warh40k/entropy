@@ -26,36 +26,37 @@ func GetEntropy(probs [256]float64) float64 {
 	return entropy
 }
 
-func GetConditionalProbs(seq []byte, freqs [256]float64) [256][256]float64 {
-	var condFreqs, condProbs [256][256]float64
-	for i := range 256 {
-		if freqs[i] != 0 {
-			for j := 1; j < len(seq); j++ {
-				if int(seq[j-1]) == i {
-					condFreqs[i][seq[j]]++
-				}
-			}
-			for j := range 256 {
-				if freqs[j] != 0 {
-					condProbs[i][j] = condFreqs[i][j] / freqs[i]
-				}
-			}
+func GetConditionalProbs(seq []byte, freqs [256]float64) map[byte]map[byte]float64 {
+	var condFreqs, condProbs = make(map[byte]map[byte]float64), make(map[byte]map[byte]float64)
+	for i := 1; i < len(seq); i++ {
+		cur := seq[i]
+		prev := seq[i-1]
+		if condFreqs[prev] == nil {
+			condFreqs[prev] = make(map[byte]float64)
+		}
+		condFreqs[prev][cur]++
+	}
+
+	for prev := range condFreqs {
+		if condProbs[prev] == nil {
+			condProbs[prev] = make(map[byte]float64)
+		}
+		for cur := range condFreqs[prev] {
+			condProbs[prev][cur] = condFreqs[prev][cur] / freqs[prev]
 		}
 	}
 
 	return condProbs
 }
 
-func GetCondEntropy(probs [256]float64, condProbs [256][256]float64) float64 {
+func GetCondEntropy(probs [256]float64, condProbs map[byte]map[byte]float64) float64 {
 	var entropy float64
-	for i, prob := range probs {
-		var batch float64
-		for _, condProb := range condProbs[i] {
-			if condProb != 0 {
-				batch += condProb * math.Log2(condProb)
-			}
+	for prev, prob := range probs {
+		var temp float64
+		for _, condProb := range condProbs[byte(prev)] {
+			temp += condProb * math.Log2(condProb)
 		}
-		entropy -= prob * batch
+		entropy += prob * temp
 	}
-	return entropy
+	return -entropy
 }
