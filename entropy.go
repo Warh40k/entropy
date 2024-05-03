@@ -63,6 +63,8 @@ func GetCondEntropy(probs [256]float64, condProbs map[byte]map[byte]float64) flo
 
 func GetCondProbsXX(seq []byte, condFreqs map[byte]map[byte]float64) map[byte]map[byte]map[byte]float64 {
 	var condFreqsXX, condProbsXX = make(map[byte]map[byte]map[byte]float64), make(map[byte]map[byte]map[byte]float64)
+
+	// подсчет количества вхождений символа при условии начичия двух предыдущих
 	for i := 2; i < len(seq); i++ {
 		cur := seq[i]
 		prev := seq[i-1]
@@ -76,6 +78,7 @@ func GetCondProbsXX(seq []byte, condFreqs map[byte]map[byte]float64) map[byte]ma
 		condFreqsXX[prev2][prev][cur]++
 	}
 
+	// вычисление условных вероятностей
 	for prev2 := range condFreqsXX {
 		if condProbsXX[prev2] == nil {
 			condProbsXX[prev2] = make(map[byte]map[byte]float64)
@@ -93,6 +96,7 @@ func GetCondProbsXX(seq []byte, condFreqs map[byte]map[byte]float64) map[byte]ma
 }
 
 func GetCondEntropyXX(probs [256]float64, condProbs map[byte]map[byte]float64, condProbsXX map[byte]map[byte]map[byte]float64) float64 {
+	// H(X|XX) = sum(p(XX) * sum(p(X|XX) * log2(p(X|XX))))
 	var entropy float64
 	for prev2 := range condProbsXX {
 		for prev := range condProbsXX[prev2] {
@@ -100,6 +104,7 @@ func GetCondEntropyXX(probs [256]float64, condProbs map[byte]map[byte]float64, c
 			for _, condProbXX := range condProbsXX[prev2][prev] {
 				temp += condProbXX * math.Log2(condProbXX)
 			}
+			// p(XX) = p(X) * p(X|X)
 			entropy += condProbs[prev2][prev] * probs[prev2] * temp
 		}
 	}
